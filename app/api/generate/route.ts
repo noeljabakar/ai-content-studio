@@ -1,12 +1,25 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
 export async function POST(req: Request) {
+    const supabase = await createClient();
+    const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    return NextResponse.json(
+      { error: "Please sign in to generate content." },
+      { status: 401 }
+    );
+  }
   try {
     const { type, tone, topic } = await req.json();
 
@@ -20,12 +33,37 @@ export async function POST(req: Request) {
     const prompt = `Write a ${tone} ${type} about: ${topic}.
 Return only the finished content, with no extra commentary.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash-lite",
+    
+
+let response: Awaited<ReturnType<typeof ai.models.generateContent>> | undefined;
+
+
+for (let attempt = 1; attempt <= 3; attempt++) {
+  try {
+    response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
       contents: prompt,
     });
+    break;
+  } catch (error) {
+    console.error(`Gemini attempt ${attempt} failed:`, error);
 
-    return NextResponse.json({ output: response.text });
+    if (attempt === 3) {
+      throw error;
+    }
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, attempt * 2000)
+    );
+  }
+}
+
+
+    if (!response) {
+  throw new Error("Gemini did not return a response after retries.");
+}
+
+return NextResponse.json({ output: response.text });
   } catch (error) {
     console.error(error);
     return NextResponse.json(

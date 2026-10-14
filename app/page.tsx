@@ -3,6 +3,8 @@
 import ReactMarkdown from "react-markdown";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 const CONTENT_TYPES = [
   "blog post",
@@ -21,12 +23,26 @@ const TONES = [
 ];
 
 export default function Home() {
+  const supabase = createClient();
+  const router = useRouter();
   const [type, setType] = useState(CONTENT_TYPES[0]);
   const [tone, setTone] = useState(TONES[0]);
   const [topic, setTopic] = useState("");
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+async function handleSignOut() {
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    setError(error.message);
+    return;
+  }
+
+  router.push("/login");
+  router.refresh();
+}
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,6 +76,16 @@ export default function Home() {
       <h1 className="text-3xl font-bold mb-6">
         AI Content Studio
       </h1>
+
+<div className="mb-6 flex justify-end">
+  <button
+    type="button"
+    onClick={handleSignOut}
+    className="rounded-lg border border-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-800"
+  >
+    Sign out
+  </button>
+</div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
