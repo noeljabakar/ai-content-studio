@@ -63,7 +63,23 @@ for (let attempt = 1; attempt <= 3; attempt++) {
   throw new Error("Gemini did not return a response after retries.");
 }
 
-return NextResponse.json({ output: response.text });
+
+const output = response.text ?? "";
+
+const { error: saveError } = await supabase.from("generations").insert({
+  user_id: user.id,
+  content_type: type,
+  tone,
+  topic,
+  output,
+});
+
+if (saveError) {
+  console.error("Failed to save generation:", saveError);
+}
+
+return NextResponse.json({ output, saved: !saveError });
+
   } catch (error) {
     console.error(error);
     return NextResponse.json(
