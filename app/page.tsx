@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import Link from "next/link";
 
 const CONTENT_TYPES = [
   "blog post",
@@ -78,6 +79,15 @@ async function handleSignOut() {
       </h1>
 
 <div className="mb-6 flex justify-end">
+  
+<div className="flex items-center gap-3">
+  <Link
+    href="/history"
+    className="rounded-lg border border-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-800"
+  >
+    History
+  </Link>
+
   <button
     type="button"
     onClick={handleSignOut}
@@ -85,6 +95,8 @@ async function handleSignOut() {
   >
     Sign out
   </button>
+</div>
+
 </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
